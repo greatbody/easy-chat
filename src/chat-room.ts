@@ -11,7 +11,7 @@ export class InMemoryChatRoom implements ChatRoom {
 
   addUser(user: User): void {
     this.users.set(user.id, user);
-    
+
     // Add join message
     const joinMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -20,7 +20,7 @@ export class InMemoryChatRoom implements ChatRoom {
       timestamp: new Date(),
       type: 'join'
     };
-    
+
     this.addMessage(joinMessage);
     console.log(`User ${user.username} (${user.id}) joined the chat`);
   }
@@ -29,7 +29,7 @@ export class InMemoryChatRoom implements ChatRoom {
     const user = this.users.get(userId);
     if (user) {
       this.users.delete(userId);
-      
+
       // Add leave message
       const leaveMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -38,7 +38,7 @@ export class InMemoryChatRoom implements ChatRoom {
         timestamp: new Date(),
         type: 'leave'
       };
-      
+
       this.addMessage(leaveMessage);
       console.log(`User ${user.username} (${userId}) left the chat`);
     }
@@ -46,7 +46,7 @@ export class InMemoryChatRoom implements ChatRoom {
 
   addMessage(message: ChatMessage): void {
     this.messages.push(message);
-    
+
     // Keep only the last maxMessages messages
     if (this.messages.length > this.maxMessages) {
       this.messages = this.messages.slice(-this.maxMessages);
@@ -85,12 +85,12 @@ export class InMemoryChatRoom implements ChatRoom {
 
   broadcastMessage(message: ChatMessage, excludeUserId?: string): void {
     const messageData = JSON.stringify(message);
-    
+
     for (const user of this.users.values()) {
       if (excludeUserId && user.id === excludeUserId) {
         continue;
       }
-      
+
       if (user.socket && user.socket.readyState === WebSocket.OPEN) {
         try {
           user.socket.send(messageData);
@@ -108,9 +108,9 @@ export class InMemoryChatRoom implements ChatRoom {
       type: 'userList',
       users: this.getUsers()
     };
-    
+
     const messageData = JSON.stringify(userListMessage);
-    
+
     for (const user of this.users.values()) {
       if (user.socket && user.socket.readyState === WebSocket.OPEN) {
         try {

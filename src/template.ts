@@ -10,7 +10,7 @@ interface TemplateData {
 
 export async function renderTemplate(templateName: string, data: TemplateData = {}): Promise<string> {
   const templatePath = join("templates", `${templateName}.html`);
-  
+
   try {
     const template = await Deno.readTextFile(templatePath);
     return interpolateTemplate(template, data);
@@ -34,6 +34,6 @@ export function escapeHtml(text: string): string {
     '"': '&quot;',
     "'": '&#039;'
   };
-  
+
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }

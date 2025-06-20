@@ -9,14 +9,14 @@ import { escapeHtml } from "./template.ts";
 export function handleWebSocketConnection(socket: WebSocket, req: Request): void {
   const url = new URL(req.url);
   const username = url.searchParams.get("username");
-  
+
   if (!username || username.trim().length === 0) {
     socket.close(1008, "Username is required");
     return;
   }
 
   const sanitizedUsername = escapeHtml(username.trim());
-  
+
   // Check if username is already taken
   if (!chatRoom.isUsernameAvailable(sanitizedUsername)) {
     socket.close(1008, "Username is already taken");
@@ -107,7 +107,7 @@ function handleClientMessage(user: User, data: { type: string; content?: string 
 
 function handleChatMessage(user: User, data: { content?: string }): void {
   const content = data.content?.toString().trim();
-  
+
   if (!content || content.length === 0) {
     return;
   }
@@ -136,6 +136,6 @@ function handleChatMessage(user: User, data: { content?: string }): void {
 
   // Broadcast message to all users
   chatRoom.broadcastMessage(message);
-  
+
   console.log(`Message from ${user.username}: ${content}`);
 }

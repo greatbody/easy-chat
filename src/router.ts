@@ -39,7 +39,7 @@ async function handleHome(_req: Request): Promise<Response> {
   const html = await renderTemplate("home", {
     title: "Easy Chat - 简易聊天室",
   });
-  
+
   return new Response(html, {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
@@ -48,7 +48,7 @@ async function handleHome(_req: Request): Promise<Response> {
 async function handleChat(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const username = url.searchParams.get("username");
-  
+
   if (!username) {
     return Response.redirect("/");
   }
@@ -57,7 +57,7 @@ async function handleChat(req: Request): Promise<Response> {
     title: "聊天室",
     username: username,
   });
-  
+
   return new Response(html, {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
@@ -66,8 +66,8 @@ async function handleChat(req: Request): Promise<Response> {
 async function handleWebSocket(req: Request): Promise<Response> {
   const { socket, response } = Deno.upgradeWebSocket(req);
   const { handleWebSocketConnection } = await import("./websocket.ts");
-  
+
   handleWebSocketConnection(socket, req);
-  
+
   return response;
 }
