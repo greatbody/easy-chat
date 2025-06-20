@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - Easy Chat</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>💬 Easy Chat</h1>
+            <div class="user-info">
+                <span class="username">{{username}}</span>
+                <button id="leaveBtn" class="leave-btn">离开聊天室</button>
+            </div>
+        </div>
+        
+        <div class="chat-main">
+            <div class="chat-sidebar">
+                <h3>在线用户 (<span id="userCount">0</span>)</h3>
+                <ul id="userList" class="user-list"></ul>
+            </div>
+            
+            <div class="chat-content">
+                <div id="messages" class="messages"></div>
+                
+                <div class="message-input">
+                    <form id="messageForm">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="输入消息..." 
+                            maxlength="500"
+                            autocomplete="off"
+                        >
+                        <button type="submit">发送</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const username = '{{username}}';
+        const ws = new WebSocket(`ws://${location.host}/ws?username=${encodeURIComponent(username)}`);
+        
+        const messagesDiv = document.getElementById('messages');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const userList = document.getElementById('userList');
+        const userCount = document.getElementById('userCount');
+        const leaveBtn = document.getElementById('leaveBtn');
+
+        // WebSocket event handlers
+        ws.onopen = function() {
+            console.log('Connected to chat server');
+            addSystemMessage('已连接到聊天服务器');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            handleMessage(data);
+        };
+
+        ws.onclose = function() {
+            console.log('Disconnected from chat server');
+            addSystemMessage('与服务器断开连接');
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            addSystemMessage('连接错误，请刷新页面重试');
+        };
+
+        // Message handling
+        function handleMessage(data) {
+            console.log('Received message:', data);
+            switch (data.type) {
+                case 'message':
+                    addChatMessage(data);
+                    break;
+                case 'join':
+                    addSystemMessage(`${data.username} 加入了聊天室`);
+                    break;
+                case 'leave':
+                    addSystemMessage(`${data.username} 离开了聊天室`);
+                    break;
+                case 'userList':
+                    console.log('Updating user list with:', data.users);
+                    updateUserList(data.users);
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+
+        function addChatMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            if (message.username === username) {
+                messageDiv.classList.add('own-message');
+            }
+            
+            const time = new Date(message.timestamp).toLocaleTimeString();
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-username">${escapeHtml(message.username)}</span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-content">${escapeHtml(message.content)}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system-message';
+            messageDiv.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateUserList(users) {
+            console.log('updateUserList called with:', users);
+            userList.innerHTML = '';
+            userCount.textContent = users.length;
+
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = user.username;
+                if (user.username === username) {
+                    li.classList.add('current-user');
+                }
+                userList.appendChild(li);
+            });
+            console.log('User list updated. Total users:', users.length);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Form submission
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            
+            if (message && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'message',
+                    content: message
+                }));
+                messageInput.value = '';
+            }
+        });
+
+        // Leave chat
+        leaveBtn.addEventListener('click', function() {
+            if (confirm('确定要离开聊天室吗？')) {
+                ws.close();
+                window.location.href = '/';
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            ws.close();
+        });
+    </script>
+</body>
+</html>

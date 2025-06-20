@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-card">
+            <h1>🎉 欢迎来到 Easy Chat</h1>
+            <p>一个简单的实时聊天室</p>
+            
+            <form id="joinForm" action="/chat" method="GET">
+                <div class="form-group">
+                    <label for="username">请输入您的用户名：</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="输入用户名..." 
+                        required 
+                        maxlength="20"
+                        pattern="[a-zA-Z0-9\u4e00-\u9fa5_-]+"
+                        title="用户名只能包含字母、数字、中文、下划线和连字符"
+                    >
+                </div>
+                <button type="submit" class="join-btn">进入聊天室</button>
+            </form>
+            
+            <div class="features">
+                <h3>功能特点：</h3>
+                <ul>
+                    <li>✨ 实时消息传递</li>
+                    <li>👥 在线用户显示</li>
+                    <li>🚀 无需注册，即时开始</li>
+                    <li>📱 响应式设计</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('joinForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                e.preventDefault();
+                alert('请输入用户名！');
+                return;
+            }
+            if (username.length > 20) {
+                e.preventDefault();
+                alert('用户名不能超过20个字符！');
+                return;
+            }
+        });
+    </script>
+</body>
+</html>
