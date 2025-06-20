@@ -16,10 +16,17 @@ export async function router(req: Request): Promise<Response> {
 
   // Static files
   if (pathname.startsWith("/static/")) {
-    return serveDir(req, {
+    const response = await serveDir(req, {
       fsRoot: "static",
       urlRoot: "static",
     });
+
+    // Set correct MIME type for manifest.json
+    if (pathname.endsWith("/manifest.json")) {
+      response.headers.set("content-type", "application/manifest+json");
+    }
+
+    return response;
   }
 
   // Routes

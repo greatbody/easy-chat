@@ -2,25 +2,32 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Easy Chat">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#667eea">
     <title>{{title}}</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
 </head>
 <body>
     <div class="container">
         <div class="welcome-card">
             <h1>🎉 欢迎来到 Easy Chat</h1>
             <p>一个简单的实时聊天室</p>
-            
+
             <form id="joinForm" action="/chat" method="GET">
                 <div class="form-group">
                     <label for="username">请输入您的用户名：</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        placeholder="输入用户名..." 
-                        required 
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="输入用户名..."
+                        required
                         maxlength="20"
                         pattern="[a-zA-Z0-9\u4e00-\u9fa5_-]+"
                         title="用户名只能包含字母、数字、中文、下划线和连字符"
@@ -28,7 +35,7 @@
                 </div>
                 <button type="submit" class="join-btn">进入聊天室</button>
             </form>
-            
+
             <div class="features">
                 <h3>功能特点：</h3>
                 <ul>

@@ -2,9 +2,16 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Easy Chat">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#667eea">
     <title>{{title}} - Easy Chat</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
 </head>
 <body>
     <div class="chat-container">
@@ -15,24 +22,28 @@
                 <button id="leaveBtn" class="leave-btn">离开聊天室</button>
             </div>
         </div>
-        
+
         <div class="chat-main">
             <div class="chat-sidebar">
                 <h3>在线用户 (<span id="userCount">0</span>)</h3>
                 <ul id="userList" class="user-list"></ul>
             </div>
-            
+
             <div class="chat-content">
                 <div id="messages" class="messages"></div>
-                
+
                 <div class="message-input">
                     <form id="messageForm">
-                        <input 
-                            type="text" 
-                            id="messageInput" 
-                            placeholder="输入消息..." 
+                        <input
+                            type="text"
+                            id="messageInput"
+                            placeholder="输入消息..."
                             maxlength="500"
                             autocomplete="off"
+                            autocapitalize="sentences"
+                            autocorrect="on"
+                            spellcheck="true"
+                            enterkeyhint="send"
                         >
                         <button type="submit">发送</button>
                     </form>
@@ -44,7 +55,7 @@
     <script>
         const username = '{{username}}';
         const ws = new WebSocket(`ws://${location.host}/ws?username=${encodeURIComponent(username)}`);
-        
+
         const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
@@ -75,7 +86,6 @@
 
         // Message handling
         function handleMessage(data) {
-            console.log('Received message:', data);
             switch (data.type) {
                 case 'message':
                     addChatMessage(data);
@@ -87,7 +97,6 @@
                     addSystemMessage(`${data.username} 离开了聊天室`);
                     break;
                 case 'userList':
-                    console.log('Updating user list with:', data.users);
                     updateUserList(data.users);
                     break;
                 default:
@@ -101,7 +110,7 @@
             if (message.username === username) {
                 messageDiv.classList.add('own-message');
             }
-            
+
             const time = new Date(message.timestamp).toLocaleTimeString();
             messageDiv.innerHTML = `
                 <div class="message-header">
@@ -110,22 +119,21 @@
                 </div>
                 <div class="message-content">${escapeHtml(message.content)}</div>
             `;
-            
+
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            scrollToBottom(true);
         }
 
         function addSystemMessage(text) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message system-message';
             messageDiv.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
-            
+
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            scrollToBottom(true);
         }
 
         function updateUserList(users) {
-            console.log('updateUserList called with:', users);
             userList.innerHTML = '';
             userCount.textContent = users.length;
 
@@ -137,7 +145,6 @@
                 }
                 userList.appendChild(li);
             });
-            console.log('User list updated. Total users:', users.length);
         }
 
         function escapeHtml(text) {
@@ -150,7 +157,7 @@
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const message = messageInput.value.trim();
-            
+
             if (message && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                     type: 'message',
@@ -172,6 +179,106 @@
         window.addEventListener('beforeunload', function() {
             ws.close();
         });
+
+        // Mobile optimizations
+        let isKeyboardOpen = false;
+
+        // Handle mobile keyboard
+        function handleKeyboard() {
+            const initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+            function onViewportChange() {
+                if (window.visualViewport) {
+                    const currentHeight = window.visualViewport.height;
+                    const heightDifference = initialViewportHeight - currentHeight;
+
+                    // Keyboard is considered open if viewport height decreased by more than 150px
+                    isKeyboardOpen = heightDifference > 150;
+
+                    if (isKeyboardOpen) {
+                        // Scroll to bottom when keyboard opens
+                        setTimeout(() => {
+                            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                        }, 100);
+                    }
+                }
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', onViewportChange);
+            }
+        }
+
+        // Initialize keyboard handling
+        handleKeyboard();
+
+        // Improve touch scrolling
+        messagesDiv.style.webkitOverflowScrolling = 'touch';
+
+        // Auto-scroll to bottom when new messages arrive (mobile-friendly)
+        function scrollToBottom(smooth = false) {
+            if (smooth && !isKeyboardOpen) {
+                messagesDiv.scrollTo({
+                    top: messagesDiv.scrollHeight,
+                    behavior: 'smooth'
+                });
+            } else {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        // Enhanced message input handling for mobile
+        messageInput.addEventListener('focus', function() {
+            // Small delay to ensure keyboard is open
+            setTimeout(() => {
+                scrollToBottom();
+            }, 300);
+        });
+
+        // Handle Enter key on mobile
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Prevent zoom on double tap for message area
+        let lastTouchEnd = 0;
+        messagesDiv.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                scrollToBottom();
+            }, 500);
+        });
+
+        // Improve performance on mobile
+        if ('serviceWorker' in navigator) {
+            // Add basic offline support
+            window.addEventListener('load', function() {
+                // Simple offline detection
+                window.addEventListener('online', function() {
+                    if (ws.readyState === WebSocket.CLOSED) {
+                        addSystemMessage('网络已恢复，正在重新连接...');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    }
+                });
+
+                window.addEventListener('offline', function() {
+                    addSystemMessage('网络连接已断开');
+                });
+            });
+        }
     </script>
 </body>
 </html>

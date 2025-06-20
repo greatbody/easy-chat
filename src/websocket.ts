@@ -34,8 +34,6 @@ export function handleWebSocketConnection(socket: WebSocket, req: Request): void
   // Add user to chat room
   chatRoom.addUser(user);
 
-  console.log(`User ${user.username} added to chat room. Total users: ${chatRoom.users.size}`);
-
   // Use setTimeout to ensure the WebSocket connection is fully established
   setTimeout(() => {
     // Send recent messages to the new user
@@ -52,12 +50,10 @@ export function handleWebSocketConnection(socket: WebSocket, req: Request): void
         type: 'userList',
         users: chatRoom.getUsers()
       };
-      console.log(`Sending user list to ${user.username}:`, userListMessage.users.map(u => u.username));
       socket.send(JSON.stringify(userListMessage));
     }
 
     // Broadcast updated user list to all users
-    console.log(`Broadcasting user list to all users. Total users: ${chatRoom.users.size}`);
     chatRoom.broadcastUserList();
   }, 100); // Small delay to ensure connection is ready
 
