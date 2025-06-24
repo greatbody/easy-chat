@@ -9,8 +9,10 @@ export async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const pathname = url.pathname;
 
-  // Handle WebSocket upgrade
-  if (req.headers.get("upgrade") === "websocket") {
+  // Handle WebSocket upgrade (check both standard and Cloudflare headers)
+  const upgrade = req.headers.get("upgrade");
+  const connection = req.headers.get("connection");
+  if (upgrade === "websocket" || (connection && connection.toLowerCase().includes("upgrade"))) {
     return handleWebSocket(req);
   }
 
@@ -71,10 +73,15 @@ async function handleChat(req: Request): Promise<Response> {
 }
 
 async function handleWebSocket(req: Request): Promise<Response> {
-  const { socket, response } = Deno.upgradeWebSocket(req);
-  const { handleWebSocketConnection } = await import("./websocket.ts");
+  try {
+    const { socket, response } = Deno.upgradeWebSocket(req);
+    const { handleWebSocketConnection } = await import("./websocket.ts");
 
-  handleWebSocketConnection(socket, req);
+    handleWebSocketConnection(socket, req);
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error('WebSocket upgrade failed:', error);
+    return new Response('WebSocket upgrade failed', { status: 400 });
+  }
 }

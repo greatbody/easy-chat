@@ -54,7 +54,6 @@
 
     <script>
         const username = '{{username}}';
-        const ws = new WebSocket(`ws://${location.host}/ws?username=${encodeURIComponent(username)}`);
 
         const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('messageForm');
@@ -63,26 +62,74 @@
         const userCount = document.getElementById('userCount');
         const leaveBtn = document.getElementById('leaveBtn');
 
-        // WebSocket event handlers
-        ws.onopen = function() {
-            console.log('Connected to chat server');
-            addSystemMessage('已连接到聊天服务器');
-        };
+        // WebSocket connection management
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let reconnectTimeout = null;
+        let isManualClose = false;
 
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            handleMessage(data);
-        };
+        function createWebSocketConnection() {
+            // Automatically choose the correct WebSocket protocol based on page protocol
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${location.host}/ws?username=${encodeURIComponent(username)}`;
 
-        ws.onclose = function() {
-            console.log('Disconnected from chat server');
-            addSystemMessage('与服务器断开连接');
-        };
+            console.log('Connecting to:', wsUrl);
+            ws = new WebSocket(wsUrl);
 
-        ws.onerror = function(error) {
-            console.error('WebSocket error:', error);
-            addSystemMessage('连接错误，请刷新页面重试');
-        };
+            // WebSocket event handlers
+            ws.onopen = function() {
+                console.log('Connected to chat server');
+                addSystemMessage('已连接到聊天服务器');
+                reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+
+                // Enable message input
+                messageInput.disabled = false;
+                messageForm.querySelector('button').disabled = false;
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (error) {
+                    console.error('Error parsing message:', error);
+                }
+            };
+
+            ws.onclose = function(event) {
+                console.log('WebSocket closed:', event.code, event.reason);
+
+                // Disable message input
+                messageInput.disabled = true;
+                messageForm.querySelector('button').disabled = true;
+
+                if (!isManualClose) {
+                    if (event.code === 1008) {
+                        // Policy violation (e.g., username taken)
+                        addSystemMessage('连接被拒绝：' + (event.reason || '用户名可能已被使用'));
+                    } else if (reconnectAttempts < maxReconnectAttempts) {
+                        addSystemMessage(`连接断开，${3}秒后尝试重连... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                        reconnectTimeout = setTimeout(() => {
+                            reconnectAttempts++;
+                            createWebSocketConnection();
+                        }, 3000);
+                    } else {
+                        addSystemMessage('连接失败，请刷新页面重试');
+                    }
+                } else {
+                    addSystemMessage('已断开连接');
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                addSystemMessage('连接错误');
+            };
+        }
+
+        // Initialize connection
+        createWebSocketConnection();
 
         // Message handling
         function handleMessage(data) {
@@ -158,26 +205,40 @@
             e.preventDefault();
             const message = messageInput.value.trim();
 
-            if (message && ws.readyState === WebSocket.OPEN) {
+            if (message && ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                     type: 'message',
                     content: message
                 }));
                 messageInput.value = '';
+            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addSystemMessage('连接已断开，正在尝试重连...');
             }
         });
 
         // Leave chat
         leaveBtn.addEventListener('click', function() {
             if (confirm('确定要离开聊天室吗？')) {
-                ws.close();
+                isManualClose = true;
+                if (reconnectTimeout) {
+                    clearTimeout(reconnectTimeout);
+                }
+                if (ws) {
+                    ws.close();
+                }
                 window.location.href = '/';
             }
         });
 
         // Handle page unload
         window.addEventListener('beforeunload', function() {
-            ws.close();
+            isManualClose = true;
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+            if (ws) {
+                ws.close();
+            }
         });
 
         // Mobile optimizations
@@ -260,25 +321,18 @@
             }, 500);
         });
 
-        // Improve performance on mobile
-        if ('serviceWorker' in navigator) {
-            // Add basic offline support
-            window.addEventListener('load', function() {
-                // Simple offline detection
-                window.addEventListener('online', function() {
-                    if (ws.readyState === WebSocket.CLOSED) {
-                        addSystemMessage('网络已恢复，正在重新连接...');
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1000);
-                    }
-                });
+        // Network status handling
+        window.addEventListener('online', function() {
+            addSystemMessage('网络已恢复，正在重新连接...');
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                reconnectAttempts = 0; // Reset attempts when network is back
+                createWebSocketConnection();
+            }
+        });
 
-                window.addEventListener('offline', function() {
-                    addSystemMessage('网络连接已断开');
-                });
-            });
-        }
+        window.addEventListener('offline', function() {
+            addSystemMessage('网络连接已断开');
+        });
     </script>
 </body>
 </html>

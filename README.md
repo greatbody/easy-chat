@@ -93,6 +93,49 @@ deno run --allow-net --allow-read --allow-env src/main.ts
 PORT=3000 deno task start
 ```
 
+## 🌐 通过 Cloudflare Tunnel 部署
+
+Easy Chat 支持通过 Cloudflare Tunnel 进行部署，实现安全的公网访问。
+
+### 快速部署
+
+1. **安装 cloudflared**
+   ```bash
+   # macOS
+   brew install cloudflare/cloudflare/cloudflared
+
+   # Linux
+   wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+   sudo dpkg -i cloudflared-linux-amd64.deb
+   ```
+
+2. **创建隧道**
+   ```bash
+   cloudflared tunnel login
+   cloudflared tunnel create easy-chat
+   cloudflared tunnel route dns easy-chat your-domain.com
+   ```
+
+3. **启动服务**
+   ```bash
+   # 启动 Easy Chat
+   deno task start
+
+   # 在另一个终端启动隧道
+   cloudflared tunnel --url http://localhost:8000 run easy-chat
+   ```
+
+### WebSocket 支持
+
+Easy Chat 已经内置了对 Cloudflare Tunnel 的 WebSocket 支持：
+
+- ✅ 自动协议检测（HTTP/HTTPS → WS/WSS）
+- ✅ 智能重连机制
+- ✅ 连接状态监控
+- ✅ 错误处理和用户提示
+
+详细配置请参考 [Cloudflare 部署指南](CLOUDFLARE_SETUP.md)。
+
 ## 🧪 测试
 
 ### 运行所有测试
