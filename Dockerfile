@@ -23,4 +23,4 @@ EXPOSE 8000
 ENV PORT=8000
 
 # Run the application
-CMD ["deno", "run", "--allow-net", "--allow-read", "src/main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-env", "src/main.ts"]
