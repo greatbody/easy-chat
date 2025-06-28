@@ -1,0 +1,58 @@
+services:
+  easy-chat:
+    # Use the image from GitHub Container Registry
+    image: ghcr.io/greatbody/easy-chat:latest
+
+    # Alternative: Build locally from source
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    container_name: easy-chat-app
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      - PORT=8000
+      - NODE_ENV=production
+
+    # Health check to ensure the service is running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Optional: Add a reverse proxy (uncomment if needed)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: easy-chat-proxy
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - easy-chat
+  #   restart: unless-stopped
+
+# Optional: Create a custom network
+networks:
+  default:
+    name: easy-chat-network

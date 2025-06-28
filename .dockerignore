@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+CLOUDFLARE_SETUP.md
+LICENSE
+
+# Development files
+.vscode
+.idea
+
+# Test files
+tests/
+test-websocket.js
+
+# CI/CD
+.github/
+
+# Docker
+Dockerfile
+.dockerignore
+compose.yml
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local

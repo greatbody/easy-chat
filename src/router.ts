@@ -39,6 +39,8 @@ export async function router(req: Request): Promise<Response> {
       return handleChat(req);
     case "/ws":
       return handleWebSocket(req);
+    case "/health":
+      return handleHealth(req);
     default:
       return new Response("Not Found", { status: 404 });
   }
@@ -69,6 +71,16 @@ async function handleChat(req: Request): Promise<Response> {
 
   return new Response(html, {
     headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function handleHealth(_req: Request): Response {
+  return new Response(JSON.stringify({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "easy-chat"
+  }), {
+    headers: { "content-type": "application/json" },
   });
 }
 
