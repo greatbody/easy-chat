@@ -1,14 +1,14 @@
 # Use the official Deno runtime as the base image
-FROM denoland/deno:1.46.3
+FROM denoland/deno:2.3.7
 
 # Set the working directory
 WORKDIR /app
 
 # Copy dependency files first for better caching
-COPY deno.json deno.lock ./
+COPY deno.json ./
 
-# Cache dependencies
-RUN deno cache --lock=deno.lock deno.json
+# Cache dependencies (without lock file to avoid version issues)
+RUN deno cache deno.json
 
 # Copy the source code
 COPY . .
