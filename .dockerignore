@@ -6,6 +6,7 @@
 README.md
 CLOUDFLARE_SETUP.md
 LICENSE
+DOCKER.md
 
 # Development files
 .vscode
@@ -18,10 +19,10 @@ test-websocket.js
 # CI/CD
 .github/
 
-# Docker
-Dockerfile
+# Docker development files
 .dockerignore
 compose.yml
+scripts/
 
 # Logs
 *.log
